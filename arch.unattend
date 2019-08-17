@@ -9,16 +9,7 @@ SYSNAME=ArchCLI
 LUKSPWD=PlzChangeMe
 TARGETDISK=/dev/sda
 
-
-read -p "This script will wipe disk ${TARGETDISK} in an attempt to install Arch Linux. Are you sure? [Y/n]" -n 1 -r
-
-echo ""
-if [[ ! $REPLY =~ ^[Yy]$ ]]
-then
- echo "Abort!"
- exit
-fi
-
+dialog --stdout  --yesno "This script will wipe disk ${TARGETDISK} in an attempt to install Arch Linux. Are you sure?" 0 0 || exit 1
 
 function checkModule(){
   MODULE="$1"
