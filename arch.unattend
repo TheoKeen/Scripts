@@ -199,7 +199,7 @@ pacman -Sy
 if ( ! ZFSKernelMatch ); then
 zfsLinuxDep=$(pacman -Si --info zfs-linux | grep "Depends On" -w  | grep -Po 'linux=\K[^ ]*')
 echo "Trying to downgrade kernel to version ${zfsLinuxDep} to satisfy zfs-linux dependency"
-sh -c /usr/bin/pacman -U https://archive.archlinux.org/packages/l/linux/linux-${zfsLinuxDep}-x86_64.pkg.tar.xz || true
+sh -c "/usr/bin/pacman -U https://archive.archlinux.org/packages/l/linux/linux-${zfsLinuxDep}-x86_64.pkg.tar.xz" || true
 fi
 
 sed -i s/'filesystems keyboard'/'encrypt zfs filesystems keyboard'/g /etc/mkinitcpio.conf
