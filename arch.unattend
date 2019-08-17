@@ -169,7 +169,9 @@ sed -i '/HookDir/s/^#//' /mnt/etc/pacman.conf
 ConfigureBaseSystem () {
 echo "Configuring base System"
 
-cat << 'CHROOTEOF' | arch-chroot /mnt /bin/bash
+#cat << 'CHROOTEOF' | arch-chroot /mnt /bin/bash
+cat << 'CHROOTEOF' > /mnt/root/install.sh
+#!/bin/bash
 
 function ZFSKernelMatch() {
 linux=`pacman -Si --info linux | grep Version -w | cut -d : -f2 | xargs`
@@ -182,7 +184,6 @@ else
     return 1
 fi
 }
-
 
 echo "Configuring Repos"
 sed -i '/\[core\]/i\ \
@@ -199,7 +200,7 @@ pacman -Sy
 if ( ! ZFSKernelMatch ); then
 zfsLinuxDep=$(pacman -Si --info zfs-linux | grep "Depends On" -w  | grep -Po 'linux=\K[^ ]*')
 echo "Trying to downgrade kernel to version ${zfsLinuxDep} to satisfy zfs-linux dependency"
-sh -c "/usr/bin/pacman -U https://archive.archlinux.org/packages/l/linux/linux-${zfsLinuxDep}-x86_64.pkg.tar.xz" || true
+sh -c "/usr/bin/pacman --noconfirm -U https://archive.archlinux.org/packages/l/linux/linux-${zfsLinuxDep}-x86_64.pkg.tar.xz" || true
 fi
 
 sed -i s/'filesystems keyboard'/'encrypt zfs filesystems keyboard'/g /etc/mkinitcpio.conf
@@ -225,6 +226,8 @@ mkdir -p /boot/EFI/BOOT
 cp /boot/EFI/Linux/Linux.efi /boot/EFI/BOOT/bootx64.efi || echo "Error: Packaged kernel not found!"
 
 CHROOTEOF
+chmod +x /mnt/root/install.sh
+arch-chroot /mnt /root/install.sh
 
 }
 
