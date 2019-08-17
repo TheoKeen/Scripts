@@ -10,6 +10,7 @@ LUKSPWD=PlzChangeMe
 TARGETDISK=/dev/sda
 
 dialog --stdout  --yesno "This script will wipe disk ${TARGETDISK} in an attempt to install Arch Linux. Are you sure?" 0 0 || exit 1
+clear
 
 function checkModule(){
   MODULE="$1"
