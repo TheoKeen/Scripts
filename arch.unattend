@@ -1,0 +1,229 @@
+#!/bin/bash
+#Unattended Install script for Arch Linux on ZFS root with Luks encryption.
+#Version: 0.1
+#Date: 17-09-2019
+
+ZFSPOOL=zp5590
+OSDS=OS
+SYSNAME=ArchCLI
+LUKSPWD=PlzChangeMe
+TARGETDISK=/dev/sda
+
+
+read -p "This script will wipe disk ${TARGETDISK} in an attempt to install Arch Linux. Are you sure? [Y/n]" -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+ echo "Abort!"
+ exit
+fi
+
+
+function checkModule(){
+  MODULE="$1"
+  if lsmod | grep "$MODULE" -w  &> /dev/null ; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+function InstallZFSinInstaller() {
+
+echo "Attempting to compile ZFS for current installer"
+mount -o remount,size=1G /run/archiso/cowspace
+
+#add [archzfs] repo before [core] repo.
+sed -i '/\[core\]/i\ \
+[archzfs] \
+SigLevel = Optional TrustAll \
+Server = http://archzfs.com/$repo/x86_64 \
+' \
+/etc/pacman.conf
+
+#add archzfs key
+pacman-key --recv-keys DDF7DB817396A49B2A2723F7403BD972F75D9D76
+pacman -Sy
+
+kversion="`uname -r |  cut -d- -f1`"."`uname -r |  cut -d- -f2,3`"
+
+ln -s /usr/lib/modules/`uname -r`/vmlinuz /boot/vmlinuz-linux
+pacman -U https://archive.archlinux.org/packages/l/linux-headers/linux-headers-${kversion}-x86_64.pkg.tar.xz
+
+#Takes a long time (6 minutes on a latitude 5590 (Intel(R) Core(TM) i7-8650U))
+time pacman -S --noconfirm zfs-dkms
+
+#enable ZFS
+modprobe zfs
+}
+
+CreatePartitions () {
+  echo "Creating partitions"
+  parted --align optimal ${TARGETDISK} --script \
+      mklabel gpt \
+      mkpart primary fat16 1MiB 256Mib \
+      mkpart primary 256Mib 100% \
+      set 1 esp on
+
+  echo "Creating EFI FS"
+  mkfs.fat -F 16 /dev/sda1
+
+  printf ${LUKSPWD} | cryptsetup --type luks2 --cipher aes-xts-plain64 --key-size 256 --hash sha256 --iter-time 2000 --use-urandom luksFormat ${TARGETDISK}2
+  printf ${LUKSPWD} | cryptsetup open --allow-discards ${TARGETDISK}2 cryptZFS
+}
+
+CreateZFSFilesystems (){
+echo "Creating ZFS pool"
+
+zpool create -o ashift=12 -o autotrim=on ${ZFSPOOL} /dev/disk/by-id/dm-name-cryptZFS
+zfs create -o mountpoint=none ${ZFSPOOL}/${OSDS}
+zfs create -o mountpoint=none ${ZFSPOOL}/data
+
+zfs create -o mountpoint=/ ${ZFSPOOL}/${OSDS}/${SYSNAME}
+zfs create -o canmount=off -o mountpoint=legacy -o xattr=sa ${ZFSPOOL}/${OSDS}/${SYSNAME}/var
+zfs create -o canmount=off -o mountpoint=legacy ${ZFSPOOL}/${OSDS}/${SYSNAME}/var/log
+zfs create -o acltype=posixacl -o mountpoint=/var/log/journal ${ZFSPOOL}/${OSDS}/${SYSNAME}/var/log/journal
+
+zfs create -o compression=lz4 -o mountpoint=legacy ${ZFSPOOL}/data/root
+zfs create -o compression=lz4 -o mountpoint=legacy ${ZFSPOOL}/data/home
+
+zfs set mountpoint=/ ${ZFSPOOL}/${OSDS}/${SYSNAME}
+zfs set mountpoint=none ${ZFSPOOL}
+zfs umount -a
+zpool export ${ZFSPOOL}
+
+zpool import -d /dev/disk/by-id/dm-name-cryptZFS -R /mnt ${ZFSPOOL}
+
+}
+
+
+CreateBaseSystem () {
+
+echo "Installing base system"
+
+mkdir /mnt/home /mnt/boot /mnt/etc /mnt/var/log/journal -p
+mount /dev/sda1 /mnt/boot
+mkdir /mnt/boot/EFI -p
+
+genfstab -U -p /mnt >> /mnt/etc/fstab
+
+zfs set mountpoint=/root ${ZFSPOOL}/data/root
+zfs set mountpoint=/home ${ZFSPOOL}/data/home
+zfs set mountpoint=legacy ${ZFSPOOL}/${OSDS}/${SYSNAME}//var/log/journal
+
+pacstrap /mnt base base-devel
+
+zfs snapshot ${ZFSPOOL}/${OSDS}/${SYSNAME}@PostCreateBaseSystem
+
+}
+
+
+
+CreateBootmgrEfiHook () {
+
+cat << OEOF > /mnt/usr/local/bin/efi-packagekernel.sh
+#!/bin/bash
+zfstarget=${ZFSPOOL}/${OSDS}/${SYSNAME}
+OEOF
+cat << 'OEOF' >> /mnt/usr/local/bin/efi-packagekernel.sh
+function getpartuuid() {
+    echo `blkid -o value -s UUID $1`
+}
+function getparentdm() {
+ echo /dev/`dmsetup deps -o devname $1  |  sed 's/.*(\(.*\))/\1/'`
+}
+
+parent=`getparentdm  /dev/mapper/cryptZFS`
+fs_uuid=`getpartuuid $parent`
+
+cat << EOF > /boot/kernel-command-line.txt
+cryptdevice=UUID=${fs_uuid}:cryptZFS:allow-discards zfs=${zfstarget} rw
+
+EOF
+
+mkdir /boot/EFI/Linux -p
+
+objcopy \
+    --add-section .osrel="/usr/lib/os-release" --change-section-vma .osrel=0x20000 \
+    --add-section .cmdline="/boot/kernel-command-line.txt" --change-section-vma .cmdline=0x30000 \
+    --add-section .linux="/boot/vmlinuz-linux" --change-section-vma .linux=0x40000 \
+    --add-section .initrd="/boot/initramfs-linux.img" --change-section-vma .initrd=0x3000000 \
+    "/usr/lib/systemd/boot/efi/linuxx64.efi.stub" "/boot/EFI/Linux/Linux.efi"
+
+OEOF
+
+chmod +x /mnt/usr/local/bin/efi-packagekernel.sh
+
+mkdir /mnt/etc/pacman.d/hooks -p
+
+cat << EOF > /mnt/etc/pacman.d/hooks/91-linux.hook
+[Trigger]
+Type = Package
+Operation = Install
+Operation = Upgrade
+Target = zfs-linux
+
+[Action]
+Description = Packaging kernel for efi boot
+When = PostTransaction
+Exec =  /usr/local/bin/efi-packagekernel.sh
+EOF
+
+sed -i '/HookDir/s/^#//' /mnt/etc/pacman.conf
+
+sed -i s/'filesystems keyboard'/'encrypt zfs filesystems keyboard'/g /mnt/etc/mkinitcpio.conf
+
+}
+
+ConfigureBaseSystem () {
+echo "Configuring base System"
+
+cat << 'CHROOTEOF' | arch-chroot /mnt /bin/bash
+
+# exit when any command fails
+set -e
+
+echo "Configuring Repos"
+sed -i '/\[core\]/i\ \
+[archzfs] \
+SigLevel = Optional TrustAll \
+Server = http://archzfs.com/$repo/x86_64 \
+' \
+/etc/pacman.conf
+
+#add archzfs key
+pacman-key --recv-keys DDF7DB817396A49B2A2723F7403BD972F75D9D76
+pacman -Sy
+
+pacman --noconfirm -S archzfs-linux efibootmgr
+
+cat << EOF > /etc/systemd/network/enp0s3.network
+
+[Match]
+name=enp0s3*
+[Network]
+DHCP=yes
+
+EOF
+
+systemctl enable systemd-networkd
+
+echo "Creating Boot entry"
+
+efibootmgr --create --disk /dev/sda --part 1 --label "Arch Linux direct" --loader "\EFI\Linux\Linux.efi" --verbose
+
+mkdir -p /boot/EFI/BOOT
+cp /boot/EFI/Linux/Linux.efi /boot/EFI/BOOT/bootx64.efi || echo "Error: Packaged kernel not found!"
+
+CHROOTEOF
+
+}
+
+if ( ! checkModule zfs) then
+ InstallZFSinInstaller
+fi
+CreatePartitions
+CreateZFSFilesystems
+CreateBaseSystem
+CreateBootmgrEfiHook
+ConfigureBaseSystem
