@@ -11,6 +11,7 @@ TARGETDISK=/dev/sda
 
 
 read -p "This script will wipe disk ${TARGETDISK} in an attempt to install Arch Linux. Are you sure? [Y/n]" -n 1 -r
+
 echo ""
 if [[ ! $REPLY =~ ^[Yy]$ ]]
 then
