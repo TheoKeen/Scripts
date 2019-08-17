@@ -1,6 +1,6 @@
 #!/bin/bash
 #Unattended Install script for Arch Linux on ZFS root with Luks encryption.
-#Version: 0.2
+#Version: 0.3
 #Date: 17-09-2019
 
 ZFSPOOL=zp5590
@@ -163,8 +163,6 @@ EOF
 
 sed -i '/HookDir/s/^#//' /mnt/etc/pacman.conf
 
-sed -i s/'filesystems keyboard'/'encrypt zfs filesystems keyboard'/g /mnt/etc/mkinitcpio.conf
-
 }
 
 ConfigureBaseSystem () {
@@ -174,6 +172,19 @@ cat << 'CHROOTEOF' | arch-chroot /mnt /bin/bash
 
 # exit when any command fails
 set -e
+
+function ZFSKernelMatch() {
+linux=`pacman -Si --info linux | grep Version -w | cut -d : -f2 | xargs`
+zfsLinuxDep=$(pacman -Si --info zfs-linux | grep "Depends On" -w  | grep -Po 'linux=\K[^ ]*')
+
+if [ "$linux" = "$zfsLinuxDep" ]; then
+    return 0
+else
+    echo "Current Linux version ${linux} does not match zfs-linux dependency  ${zfsLinuxDep} ."
+    return 1
+fi
+}
+
 
 echo "Configuring Repos"
 sed -i '/\[core\]/i\ \
@@ -187,6 +198,14 @@ Server = http://archzfs.com/$repo/x86_64 \
 pacman-key --recv-keys DDF7DB817396A49B2A2723F7403BD972F75D9D76
 pacman -Sy
 
+if ( ! ZFSKernelMatch ); then
+zfsLinuxDep=$(pacman -Si --info zfs-linux | grep "Depends On" -w  | grep -Po 'linux=\K[^ ]*')
+echo "Trying to downgrade kernel to version ${zfsLinuxDep} to satisfy zfs-linux dependency"
+pacman -U https://archive.archlinux.org/packages/l/linux/linux-${zfsLinuxDep}-x86_64.pkg.tar.xz || exit
+fi
+
+
+sed -i s/'filesystems keyboard'/'encrypt zfs filesystems keyboard'/g /mnt/etc/mkinitcpio.conf
 pacman --noconfirm -S archzfs-linux efibootmgr
 
 cat << EOF > /etc/systemd/network/enp0s3.network
