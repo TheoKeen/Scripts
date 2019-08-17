@@ -1,6 +1,6 @@
 #!/bin/bash
 #Unattended Install script for Arch Linux on ZFS root with Luks encryption.
-#Version: 0.1
+#Version: 0.2
 #Date: 17-09-2019
 
 ZFSPOOL=zp5590
