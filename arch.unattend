@@ -40,14 +40,15 @@ pacman -Sy
 
 kversion="`uname -r |  cut -d- -f1`"."`uname -r |  cut -d- -f2,3`"
 
+echo creating link from "/usr/lib/modules/`uname -r`/vmlinuz" to "/boot/vmlinuz-linux" .
 ln -s /usr/lib/modules/`uname -r`/vmlinuz /boot/vmlinuz-linux
-pacman -U https://archive.archlinux.org/packages/l/linux-headers/linux-headers-${kversion}-x86_64.pkg.tar.xz
+pacman --noconfirm -U https://archive.archlinux.org/packages/l/linux-headers/linux-headers-${kversion}-x86_64.pkg.tar.xz
 
 #Takes a long time (6 minutes on a latitude 5590 (Intel(R) Core(TM) i7-8650U))
 time pacman -S --noconfirm zfs-dkms
 
 #enable ZFS
-modprobe zfs
+modprobe zfs || (echo "Installing ZFS in arch installer failed. Aborting install." && exit 1)
 }
 
 CreatePartitions () {
@@ -223,7 +224,7 @@ echo "Creating Boot entry"
 efibootmgr --create --disk /dev/sda --part 1 --label "Arch Linux direct" --loader "\EFI\Linux\Linux.efi" --verbose
 
 mkdir -p /boot/EFI/BOOT
-cp /boot/EFI/Linux/Linux.efi /boot/EFI/BOOT/bootx64.efi || echo "Error: Packaged kernel not found!"
+cp /boot/EFI/Linux/Linux.efi /boot/EFI/BOOT/bootx64.efi || (echo "Error: Packaged kernel not found!" && exit 1)
 
 CHROOTEOF
 chmod +x /mnt/root/install.sh
