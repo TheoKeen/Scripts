@@ -1,5 +1,7 @@
 #!/bin/bash
 
+su -l core
+
 #remove the symbolic link.
 rm ~/.bashrc
 
@@ -14,7 +16,7 @@ source ~/.bashrc
 
 cd ~
 git clone https://github.com/TheoKeen/docker-compose
-cd ~/docker-compose
+cd ~/docker-compose/qemu-ga/
 docker-compose up -d
 
 mkdir /opt/keennews
