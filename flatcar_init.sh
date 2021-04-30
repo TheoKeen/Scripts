@@ -1,7 +1,5 @@
 #!/bin/bash
 
-su -l core
-
 #remove the symbolic link.
 rm ~/.bashrc
 
