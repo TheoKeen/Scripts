@@ -16,6 +16,10 @@ source ~/.bashrc
 cd ~
 git clone https://github.com/TheoKeen/docker-compose
 cd ~/docker-compose/qemu-ga/
+replace01=$(ls /dev/vport*)
+search01="/dev/vport3p1"
+sed -i "s,$search01,$replace01,g" ./docker-compose.yml
+
 docker-compose up -d
 
 mkdir /opt/keennews
