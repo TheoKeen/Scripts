@@ -3,14 +3,16 @@
 #remove the symbolic link.
 #rm ~/.bashrc
 
-#create alias for docker-compose
-echo alias docker-compose="'"'/usr/bin/docker run --rm \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v "$PWD:$PWD" \
-    -w="$PWD" \
-    docker/compose:1.29.0'"'" >> ~/.bashrc
-    
-shopt -s expand_aliases    
+cat << EOF > ~/.bashrc
+if [ -d "/opt/usr/bin" ]; then
+  PATH="$PATH:/opt/usr/bin"
+fi
+EOF
+
+mkdir /opt/usr/bin -p
+curl -L https://github.com/docker/compose/releases/download/1.25.3/docker-compose-`uname -s`-`uname -m` -o /opt/usr/bin/docker-compose
+chmod +x /opt/usr/bin/docker-compose
+
 source ~/.bashrc
 
 cd ~
