@@ -10,7 +10,7 @@ mkdir /run/network
 export DEBIAN_FRONTEND=noninteractive
 apt install proxmox-ve -y
 
-cat << EOF > /etc/network/interfaces
+cat << EOF > /etc/network/interfaces.new
 auto lo
 iface lo inet loopback
 
