@@ -7,6 +7,9 @@ echo pve-tink01 > /etc/hostname
 
 mkdir /run/network
 
+export DEBIAN_FRONTEND=noninteractive
+apt install proxmox-ve -y
+
 cat << EOF > /etc/network/interfaces
 auto lo
 iface lo inet loopback
@@ -15,7 +18,3 @@ auto enp2s0
 iface enp2s0 inet dhcp
 
 EOF
-
-export DEBIAN_FRONTEND=noninteractive
-apt install proxmox-ve -y
-
