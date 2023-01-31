@@ -17,6 +17,11 @@ dpkg-reconfigure openssh-server
 apt install proxmox-ve -y
 
 cat << EOF > /etc/network/interfaces.new
+auto lo
+iface lo inet loopback
+
+iface enp2s0 inet manual
+
 auto vmbr0
 iface vmbr0 inet static
 	address ${Tip}/24
