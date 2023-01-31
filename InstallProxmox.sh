@@ -35,6 +35,8 @@ iface vmbr0 inet static
 
 EOF
 
+systemctl disable systemd-resolved.service
+systemctl stop systemd-resolved
 mv /etc/resolv.conf /etc/resolv.conf.old
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 echo "nameserver 8.8.4.4" >> /etc/resolv.conf
