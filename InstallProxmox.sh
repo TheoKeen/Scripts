@@ -15,6 +15,7 @@ echo ${Thostname} > /etc/hostname
 mkdir /run/network
 
 export DEBIAN_FRONTEND=noninteractive
+dpkg-reconfigure openssh-server
 apt install proxmox-ve -y
 
 cat << EOF > /etc/network/interfaces.new
