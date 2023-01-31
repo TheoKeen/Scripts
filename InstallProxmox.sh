@@ -1,5 +1,7 @@
 #!/bin/bash
 
+apt-get install jq -y
+
 Thostname=$(curl -s $TinkIP:50061/metadata | jq -r .metadata.instance.hostname)
 Tip=$(curl -s $TinkIP:50061/metadata | jq  -r .network.interfaces[].dhcp.ip.address)
 
