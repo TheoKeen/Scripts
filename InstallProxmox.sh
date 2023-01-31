@@ -37,6 +37,9 @@ EOF
 
 systemctl disable systemd-resolved.service
 systemctl stop systemd-resolved
+systemctl disable resolvconf
+systemctl stop resolvconf
+
 mv /etc/resolv.conf /etc/resolv.conf.old
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 echo "nameserver 8.8.4.4" >> /etc/resolv.conf
