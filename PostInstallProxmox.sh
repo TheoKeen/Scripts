@@ -5,3 +5,6 @@ if [ ! -d /var/log/Tink ]; then
 fi
 
 touch /var/log/Tink/PostInstallProxmox.sh
+
+/usr/sbin/lvcreate -l 90%FREE -T cloud/data
+/usr/sbin/pvesm add lvmthin local-lvm --vgname cloud --thinpool data
