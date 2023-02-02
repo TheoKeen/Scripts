@@ -1,5 +1,7 @@
 #!/bin/bash
 
+apt-get install jq parted -y
+
 if [  -b /dev/nvme0n1p2 ]; then
 
 sgdisk -d 2 /dev/nvme0n1 
@@ -9,8 +11,6 @@ growpart /dev/nvme0n1 1
 pvresize /dev/nvme0n1p1
 lvextend -l +100%FREE /dev/cloud/root
 fi
-
-apt-get install jq -y
 
 Thostname=$(curl -s $TinkIP:50061/metadata | jq -r .metadata.instance.hostname)
 Tip=$(curl -s $TinkIP:50061/metadata | jq  -r .network.interfaces[].dhcp.ip.address)
