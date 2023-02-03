@@ -1,6 +1,6 @@
 #!/bin/bash
 
-apt-get install jq parted -y
+apt-get install jq parted socat -y
 
 if [  -b /dev/nvme0n1p2 ]; then
 
@@ -48,4 +48,22 @@ iface vmbr0 inet static
 
 EOF
 
+cat << EOF > /etc/systemd/system/sshproxyin.service
+
+[Unit]
+Description=Forward vsock to ssh
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/socat -T 600 vsock-listen:138,fork TCP:localhost:22 
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+EOF
+
+chmod +x /etc/systemd/system/sshproxyin.service
+systemctl enable sshproxyin.service
 
