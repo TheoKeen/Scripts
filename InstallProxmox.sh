@@ -23,6 +23,8 @@ echo ${Thostname} > /etc/hostname
 
 mkdir /run/network
 
+cp /home/frank/.ssh/authorized_keys ~/.ssh/
+
 export DEBIAN_FRONTEND=noninteractive
 dpkg-reconfigure openssh-server
 apt install proxmox-ve -y
