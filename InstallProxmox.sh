@@ -10,6 +10,7 @@ partprobe /dev/nvme0n1
 growpart /dev/nvme0n1 1
 pvresize /dev/nvme0n1p1
 lvextend -l +100%FREE /dev/cloud/root
+resize2fs /dev/cloud/root
 fi
 
 Thostname=$(curl -s $TinkIP:50061/metadata | jq -r .metadata.instance.hostname)
