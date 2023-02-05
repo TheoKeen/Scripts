@@ -88,4 +88,4 @@ systemctl enable webproxyout.service
 set +x
 }
 
-Install 2>&1 /var/log/TinkInstallProxmox.log
+Install 2>&1 | cat /var/log/TinkInstallProxmox.log
