@@ -86,4 +86,4 @@ systemctl enable sshproxyin.service
 systemctl enable webproxyout.service
 }
 
-install 2>&1 /var/log/TinkInstallProxmox.log
+Install 2>&1 /var/log/TinkInstallProxmox.log
