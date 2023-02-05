@@ -1,5 +1,8 @@
 #!/bin/bash
 
+export DEBIAN_FRONTEND=noninteractive
+apt-get -f install
+
 if [ ! -d /var/log/Tink ]; then
   mkdir /var/log/Tink
 fi
