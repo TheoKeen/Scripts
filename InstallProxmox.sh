@@ -1,5 +1,7 @@
 #!/bin/bash
 
+function Install()
+{
 apt-get install jq parted socat -y
 
 if [  -b /dev/nvme0n1p2 ]; then
@@ -82,3 +84,6 @@ chmod +x /etc/systemd/system/sshproxyin.service
 chmod +x /etc/systemd/system/webproxyout.service
 systemctl enable sshproxyin.service
 systemctl enable webproxyout.service
+}
+
+install 2>&1 /var/log/TinkInstallProxmox.log
