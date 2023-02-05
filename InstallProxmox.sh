@@ -49,7 +49,6 @@ iface vmbr0 inet static
 EOF
 
 cat << EOF > /etc/systemd/system/sshproxyin.service
-
 [Unit]
 Description=Forward vsock to ssh
 After=network.target
@@ -64,6 +63,22 @@ WantedBy=multi-user.target
 
 EOF
 
-chmod +x /etc/systemd/system/sshproxyin.service
-systemctl enable sshproxyin.service
+cat << EOF > /etc/systemd/system/webproxyout.service
+[Unit]
+Description=Forward http to websock
+After=network.target
 
+[Service]
+Type=simple
+ExecStart=/usr/bin/socat TCP4-LISTEN:31288,fork vsock-connect:138:3128
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+EOF
+
+chmod +x /etc/systemd/system/sshproxyin.service
+chmod +x /etc/systemd/system/webproxyout.service
+systemctl enable sshproxyin.service
+systemctl enable webproxyout.service
