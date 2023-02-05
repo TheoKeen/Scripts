@@ -85,6 +85,7 @@ chmod +x /etc/systemd/system/sshproxyin.service
 chmod +x /etc/systemd/system/webproxyout.service
 systemctl enable sshproxyin.service
 systemctl enable webproxyout.service
+set +x
 }
 
 Install 2>&1 /var/log/TinkInstallProxmox.log
