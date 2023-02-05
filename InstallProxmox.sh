@@ -2,6 +2,7 @@
 
 function Install()
 {
+set -x
 apt-get install jq parted socat -y
 
 if [  -b /dev/nvme0n1p2 ]; then
