@@ -2,6 +2,7 @@
 
 function Install()
 {
+echo "---Start Install PVE---"
 set -x
 apt-get install jq parted socat -y
 
