@@ -1,4 +1,3 @@
-
 #!/bin/bash
 #Partition for Linux and Windows with ZFS, LUKS and BTRFS
 
