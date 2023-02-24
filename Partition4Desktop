@@ -14,7 +14,7 @@ PARTLABEL=p  #Add the p to parentdevice when specifying part. For instance /dev/
 
 function CreatePartitions()
 {
-
+wipefs -a ${TARGETDISK}
 echo "Creating disk partitions (CreatePartitions)"
 sgdisk -Z ${TARGETDISK}
 sgdisk -n ${grubpartno}:2048:10239 -t 0:ef02 ${TARGETDISK}    #Grub
