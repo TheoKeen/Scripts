@@ -6,7 +6,8 @@ grubpartno=15
 bootpartno=1
 lukspartno=2
 zfspartno=3
-winpartno=4
+swappartno=4
+winpartno=5
 
 TARGETDISK=/dev/nvme0n1
 PARTLABEL=p  #Add the p to parentdevice when specifying part. For instance /dev/nvme0n1p1
@@ -19,7 +20,8 @@ sgdisk -Z ${TARGETDISK}
 sgdisk -n ${grubpartno}:2048:10239 -t 0:ef02 ${TARGETDISK}    #Grub
 sgdisk -n ${efipartno}:10240:227327 -t 0:ef00 ${TARGETDISK}   #EFI
 sgdisk -n ${bootpartno}:+0M:+1G -t 0:8300 ${TARGETDISK}       #Linux Boot
-sgdisk -n ${lukspartno}:+0M:+250G -t 0:8309 ${TARGETDISK}      #Linux LUKS
+sgdisk -n ${lukspartno}:+0M:+250G -t 0:8309 ${TARGETDISK}     #Linux LUKS
+sgdisk -n ${swappartno}:+0M:+16G -t 0:8200 ${TARGETDISK}      #Linux SWAP
 sgdisk -n ${zfspartno}:+0M:+750G -t 0:a504 ${TARGETDISK}      #ZFS
 sgdisk -N ${winpartno} -t 0:0x0700 ${TARGETDISK}              #Windows
 
@@ -31,6 +33,18 @@ function CreatFileSystems()
 mkfs.fat -F 32 ${TARGETDISK}${PARTLABEL}${efipartno}
 mkfs.ext4 ${TARGETDISK}${PARTLABEL}${bootpartno}
 
-echo "123" |  cryptsetup -v --type luks2 luksFormat ${TARGETDISK}${PARTLABEL}${lukspartno}
+echo ${LUKSPASS} |  cryptsetup -y --type luks2 luksFormat ${TARGETDISK}${PARTLABEL}${lukspartno} -
+echo ${LUKSPASS} | cryptsetup luksOpen ${TARGETDISK}${PARTLABEL}${lukspartno} crypted -
+
+mkfs.btrfs -L osr /dev/mapper/crypted
 
 }
+
+
+if [  -z ${LUKSPASS} ]; then
+ echo "LUKSPASS var needs to be set."
+ exit 1
+fi
+
+CreatePartitions
+CreatFileSystems
