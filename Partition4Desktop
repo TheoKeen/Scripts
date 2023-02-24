@@ -1,5 +1,6 @@
 
 #!/bin/bash
+#Partition for Linux and Windows with ZFS, LUKS and BTRFS
 
 efipartno=14
 grubpartno=15
@@ -40,11 +41,26 @@ mkfs.btrfs -L osr /dev/mapper/crypted
 
 }
 
+function Confirm()
+{
+read -p "This Script will repartition and Destroy everyting on ${TARGETDISK} Do you want to proceed? (yes/no) " yn
+
+case $yn in 
+	yes ) echo ok, we will proceed;;
+	no ) echo exiting...;
+		exit;;
+	* ) echo invalid response;
+		exit 1;;
+esac
+
+}
 
 if [  -z ${LUKSPASS} ]; then
  echo "LUKSPASS var needs to be set."
  exit 1
 fi
 
+Confirm
 CreatePartitions
 CreatFileSystems
+echo "Partitioning complete. Now run the Ubuntu installer"
