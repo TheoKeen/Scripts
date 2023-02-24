@@ -33,8 +33,8 @@ function CreatFileSystems()
 mkfs.fat -F 32 ${TARGETDISK}${PARTLABEL}${efipartno}
 mkfs.ext4 ${TARGETDISK}${PARTLABEL}${bootpartno}
 
-echo ${LUKSPASS} |  cryptsetup -y --type luks2 luksFormat ${TARGETDISK}${PARTLABEL}${lukspartno} -
-echo ${LUKSPASS} | cryptsetup luksOpen ${TARGETDISK}${PARTLABEL}${lukspartno} crypted -
+echo ${LUKSPASS} | cryptsetup -v -q --type luks2 luksFormat ${TARGETDISK}${PARTLABEL}${lukspartno}
+echo ${LUKSPASS} | cryptsetup luksOpen ${TARGETDISK}${PARTLABEL}${lukspartno} crypted
 
 mkfs.btrfs -L osr /dev/mapper/crypted
 
