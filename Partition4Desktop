@@ -22,7 +22,7 @@ sgdisk -n ${efipartno}:10240:227327 -t 0:ef00 ${TARGETDISK}   #EFI
 sgdisk -n ${bootpartno}:+0M:+1G -t 0:8300 ${TARGETDISK}       #Linux Boot
 sgdisk -n ${lukspartno}:+0M:+250G -t 0:8309 ${TARGETDISK}     #Linux LUKS
 sgdisk -n ${swappartno}:+0M:+16G -t 0:8200 ${TARGETDISK}      #Linux SWAP
-sgdisk -n ${zfspartno}:+0M:+750G -t 0:a504 ${TARGETDISK}      #ZFS
+sgdisk -n ${zfspartno}:+0M:+700G -t 0:a504 ${TARGETDISK}      #ZFS
 sgdisk -N ${winpartno} -t 0:0x0700 ${TARGETDISK}              #Windows
 
 }
